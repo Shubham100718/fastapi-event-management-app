@@ -1,42 +1,32 @@
 import re
-from pydantic import BaseModel, EmailStr, constr, validator
-
-
-def validate_email(value: str) -> str:
-    if value == None:
-        raise ValueError("Email can not be null")
-    if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', value):
-        raise ValueError("The email you entered appears to be incorrect.")
-    return value
-
-def validate_password(value: str) -> str:
-    if value is None:
-        raise ValueError("Password cannot be null")
-    if len(value) < 5:
-        raise ValueError("Password must be at least 5 characters long")
-    return value
+from typing import Annotated
+from pydantic import BaseModel, EmailStr, StringConstraints, field_validator, ConfigDict
 
 
 class UserRegisterSchema(BaseModel):
     email: EmailStr
-    password: constr(min_length=5)
+    password: Annotated[str, StringConstraints(min_length=5)]
 
-    @validator('email')
-    def validate_register_username(cls, value):
-        return validate_email(value)
+    @field_validator('email')
+    def validate_email(cls, value: str) -> str:
+        # Check if email is valid or not
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', value):
+            raise ValueError("The email you entered appears to be incorrect.")
+        return value
 
-    @validator('password')
-    def validate_register_password(cls, value):
-        return validate_password(value)
+    @field_validator("password")
+    def validate_password(cls, value: str) -> str:
+        # Check if the password contains only alphanumeric characters
+        if not value.isalnum():
+            raise ValueError("Password must contain only alphanumeric characters")
+        return value
     
-    class Config:
-        orm_mode: True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserLoginSchema(BaseModel):
     email: EmailStr
     password: str
 
-    class Config:
-        orm_mode: True
+    model_config = ConfigDict(from_attributes=True)
 

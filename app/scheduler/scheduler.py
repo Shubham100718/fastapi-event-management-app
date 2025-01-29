@@ -6,8 +6,8 @@ from app.models import Event
 
 
 async def update_event_status():
-    """Update event statuses to 'completed' if their end_time has passed."""
-    async for db in get_db():  # Use `async for` to handle the generator
+    # Update event statuses to 'completed' if their end_time has passed
+    async for db in get_db():
         try:
             current_time = datetime.now()
             result = await db.execute(
@@ -23,7 +23,7 @@ async def update_event_status():
 
 
 def start_scheduler():
-    """Start the scheduler with AsyncIOScheduler."""
+    # Start the scheduler with AsyncIOScheduler
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_event_status, "interval", minutes=1)
     scheduler.start()

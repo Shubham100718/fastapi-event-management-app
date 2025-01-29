@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from starlette.middleware.cors import CORSMiddleware
 from .database import Base, async_engine
 from .routes.auth_routes import auth_router
@@ -7,8 +8,6 @@ from .routes.attendees_routes import attendee_router
 from .scheduler.scheduler import start_scheduler
 
 
-app = FastAPI()
-
 # Create database tables asynchronously
 async def create_tables():
     """Create all database tables asynchronously."""
@@ -16,12 +15,16 @@ async def create_tables():
         await conn.run_sync(Base.metadata.create_all)
 
 # Initialize the app
-@app.on_event("startup")
-async def startup_event():
-    # Create tables on startup
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Code to run on startup
     await create_tables()
-    # Start the scheduler
     start_scheduler()
+    yield
+    # Code to run on shutdown (if needed)
+    pass
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 async def read_root():

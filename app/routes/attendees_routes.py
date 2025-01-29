@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy import select
 from typing import List
 from app.database import get_db
 from app.models import User, Attendee, Event
@@ -33,7 +33,7 @@ async def register_attendee(attendee: AttendeeCreate,
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Max attendees limit reached")
 
     # Register the attendee
-    new_attendee = Attendee(**attendee.dict(), event_id=event_id)
+    new_attendee = Attendee(**attendee.model_dump(), event_id=event_id)
     db.add(new_attendee)
     try:
         await db.commit()
@@ -52,6 +52,7 @@ async def list_attendees(event_id: int,
                         db: AsyncSession = Depends(get_db),
                         current_user: User = Depends(get_current_user)
     ):
+    # Fetch all attendees
     result = await db.execute(select(Attendee).filter(Attendee.event_id==event_id))
     attendees = result.scalars().all()
     if not attendees:
@@ -78,10 +79,10 @@ async def check_in_attendees(payload: AttendeeCheckIn,
     # Update check-in status for each attendee
     for attendee in attendees:
         attendee.check_in_status = True
-    await db.commit()
+        await db.commit()
+        await db.refresh(attendee)
     return {
-        "message": "Attendees checked in successfully",
-        "checked_in_attendees": [attendee.attendee_id for attendee in attendees]
+        "message": "Attendees checked in successfully"
     }
 
 
@@ -92,7 +93,7 @@ async def bulk_check_in(event_id: int,
                         current_user: User = Depends(get_current_user)
     ):
     # Process the uploaded CSV file
-    attendee_ids = process_csv(file.file)
+    attendee_ids = await process_csv(file)
     # Fetch attendees matching the IDs and event
     result = await db.execute(
         select(Attendee).filter(
@@ -108,9 +109,9 @@ async def bulk_check_in(event_id: int,
     # Update check-in status for each attendee
     for attendee in attendees:
         attendee.check_in_status = True
-    await db.commit()
+        await db.commit()
+        await db.refresh(attendee)
     return {
-        "message": f"Bulk check-in successful for {len(attendees)} attendees",
-        "checked_in_attendees": [attendee.attendee_id for attendee in attendees]
+        "message": "Bulk check-in successful"
     }
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
 from enum import Enum
@@ -10,6 +10,7 @@ class EventStatus(str, Enum):
     completed = "completed"
     canceled = "canceled"
 
+
 class EventCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -17,6 +18,7 @@ class EventCreate(BaseModel):
     end_time: datetime
     location: str
     max_attendees: int
+
 
 class EventUpdate(BaseModel):
     name: Optional[str] = None
@@ -26,6 +28,7 @@ class EventUpdate(BaseModel):
     location: Optional[str] = None
     max_attendees: Optional[int] = None
     status: Optional[EventStatus] = None
+
 
 class EventResponse(BaseModel):
     event_id: int
@@ -37,6 +40,5 @@ class EventResponse(BaseModel):
     max_attendees: int
     status: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 

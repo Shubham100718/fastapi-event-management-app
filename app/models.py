@@ -36,7 +36,7 @@ class Event(Base):
     location = Column(String, nullable=False)
     max_attendees = Column(Integer, nullable=False)
     status = Column(Enum(EventStatus), default=EventStatus.scheduled)
-    attendees = relationship("Attendee", back_populates="event")
+    attendees = relationship("Attendee", back_populates="event", lazy='selectin')
 
 
 class Attendee(Base):
@@ -48,5 +48,5 @@ class Attendee(Base):
     phone_number = Column(String, nullable=False)
     event_id = Column(Integer, ForeignKey("events.event_id"))
     check_in_status = Column(Boolean, default=False)
-    event = relationship("Event", back_populates="attendees")
+    event = relationship("Event", back_populates="attendees", lazy='selectin')
 

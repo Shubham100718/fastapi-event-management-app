@@ -16,7 +16,8 @@ async def create_event(event: EventCreate,
                     db: AsyncSession = Depends(get_db),
                     current_user: User = Depends(get_current_user)
     ):
-    new_event = Event(**event.dict())
+    # Register the event
+    new_event = Event(**event.model_dump())
     db.add(new_event)
     await db.commit()
     await db.refresh(new_event)
@@ -29,12 +30,14 @@ async def update_event(event_id: int,
                     db: AsyncSession = Depends(get_db),
                     current_user: User = Depends(get_current_user)
     ):
+    # Fetch event matching the provided ID
     result = await db.execute(select(Event).filter(Event.event_id==event_id))
     db_event = result.scalar_one_or_none()
     if not db_event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail="Event not found")
-    for key, value in event.dict(exclude_unset=True).items():
+    # Update the event
+    for key, value in event.model_dump(exclude_unset=True).items():
         setattr(db_event, key, value)
     await db.commit()
     await db.refresh(db_event)
@@ -49,6 +52,7 @@ async def list_events(status: Optional[EventStatus] = None,
                     db: AsyncSession = Depends(get_db),
                     current_user: User = Depends(get_current_user)
     ):
+    # Fetch all the events based on following query parameters
     query = select(Event)
     if status:
         query = query.filter(Event.status==status)
