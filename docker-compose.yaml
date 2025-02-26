@@ -1,0 +1,61 @@
+services:
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: event_management_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - shared_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql", "-u", "root", "-proot"]
+      interval: 10s          # Check every 10 seconds
+      retries: 5             # Retry up to 5 times before marking as unhealthy
+      start_period: 60s      # Give MySQL 60 seconds to initialize
+      timeout: 5s            # Timeout for each health check
+
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      PMA_HOST: mysql
+      PMA_USER: admin
+      PMA_PASSWORD: admin123
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - shared_network
+    restart: always
+
+  app:
+    container_name: app
+    build:
+      context: .
+    ports:
+      - 5000:5000
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+      MYSQL_DB: event_management_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - shared_network
+    restart: always
+
+volumes:
+  mysql-data:
+    driver: local
+
+networks:
+  shared_network:
+    external: true
+

@@ -6,7 +6,12 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 Base = declarative_base()
 
 # Database engine
-async_engine = create_async_engine("sqlite+aiosqlite:///./test.db", echo=True)
+# async_engine = create_async_engine("sqlite+aiosqlite:///./test.db", echo=True)
+
+async_engine = create_async_engine(
+    "mysql+asyncmy://admin:admin123@mysql:3306/event_management_db",
+    echo=True
+)
 
 # Create a session
 async_session = sessionmaker(
